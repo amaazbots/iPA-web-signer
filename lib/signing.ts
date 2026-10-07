@@ -4,6 +4,18 @@ import { inspectProfile, resolveBundleId, signingEntitlements } from "./profile"
 import type { AppMetadata } from "./types";
 import { IPA_MAX_SIZE_BYTES, IPA_MAX_SIZE_MB, IPA_MAX_ENTRY_BYTES, IPA_MAX_UNPACKED_BYTES } from "./ipa-limits";
 
+export type IpaInspection = { title:string; version:string; bundleId:string; size:number; sha256:string; extensions:number; needsBundleCleanup:boolean };
+
+export async function inspectIpa(file:File):Promise<IpaInspection>{
+ const {root,names,needsBundleCleanup}=await checkArchive(file);const data=new Uint8Array(await file.arrayBuffer());
+ const entries=unzipSync(data,{filter:entry=>entry.name===root+"Info.plist"&&entry.originalSize<=2*1024*1024});const bytes=entries[root+"Info.plist"];
+ if(!bytes)throw new Error("This IPA is missing its Info.plist.");const info=readPlist(bytes);const bundleId=String(info.CFBundleIdentifier||"");
+ if(!/^[A-Za-z0-9._-]{1,255}$/.test(bundleId))throw new Error("This IPA has an invalid bundle identifier.");
+ const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",data));const sha256=Array.from(digest,b=>b.toString(16).padStart(2,"0")).join("");
+ const extensions=new Set([...names].map(name=>name.match(/\/PlugIns\/([^/]+\.appex)\//)?.[1]).filter(Boolean)).size;
+ return {title:String(info.CFBundleDisplayName||info.CFBundleName||file.name.replace(/\.ipa$/i,"")).slice(0,150),version:String(info.CFBundleShortVersionString||info.CFBundleVersion||"Unknown").slice(0,40),bundleId,size:file.size,sha256,extensions,needsBundleCleanup};
+}
+
 export async function checkArchive(file: File) {
  if(!file.size || file.size>IPA_MAX_SIZE_BYTES)throw new Error(`Choose an IPA up to ${IPA_MAX_SIZE_MB} MB.`);
  const tail=new Uint8Array(await file.slice(Math.max(0,file.size-65557)).arrayBuffer());const view=new DataView(tail.buffer);let eocd=-1;

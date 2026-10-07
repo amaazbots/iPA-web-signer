@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { PwaRegister } from "@/components/pwa-register";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://amaazsign.amaazbots.workers.dev"),
@@ -25,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}<PwaRegister/></body>
+      <body className="antialiased">{children}<PwaRegister/><PwaInstallPrompt/></body>
     </html>
   );
 }

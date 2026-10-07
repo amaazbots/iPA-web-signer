@@ -7,6 +7,6 @@ export function SiteFooter() {
       <a href="https://www.youtube.com/@vTxMazi" target="_blank" rel="noopener noreferrer"><CirclePlay size={17} aria-hidden="true"/>YouTube</a>
       <a href="https://discord.com/invite/Kt2UkD4Q8k" target="_blank" rel="noopener noreferrer"><MessageCircle size={17} aria-hidden="true"/>Discord</a>
     </nav>
-    <div><a href="/help">Installation help</a><a href="/privacy">Privacy</a><a href="/admin">Owner dashboard</a></div>
+    <div><a href="/help">Help</a><a href="/status">Status</a><a href="/trust">Trust</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/removal">Removal</a><a href="/admin">Owner dashboard</a></div>
   </footer>;
 }
