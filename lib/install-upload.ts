@@ -22,15 +22,21 @@ export async function finishInstall(request: Request, row: PendingInstall): Prom
   return json({ installUrl: "itms-services://?action=download-manifest&url=" + encodeURIComponent(manifestUrl), manifestUrl, pageUrl: origin + "/install/" + row.id, expiresAt: row.expires_at });
 }
 
-export async function cleanExpiredInstalls(now: number): Promise<void> {
-  const db = database();
-  const old = await db.prepare("SELECT id,file_key,upload_id FROM installs WHERE expires_at<? LIMIT 30").bind(now).all<{ id: string; file_key: string; upload_id: string | null }>();
-  for (const row of old.results) {
-    if (row.upload_id) {
-      try { await bucket().resumeMultipartUpload(row.file_key, row.upload_id).abort(); }
-      catch { console.error("An expired multipart upload could not be aborted; storage expiry will clear unfinished parts."); }
+export async function cleanExpiredInstalls(now: number, maxBatches = 4): Promise<number> {
+  const db = database(); let removed = 0;
+  for (let batch = 0; batch < maxBatches; batch++) {
+    const old = await db.prepare("SELECT id,file_key,upload_id FROM installs WHERE expires_at<? LIMIT 30").bind(now).all<{ id: string; file_key: string; upload_id: string | null }>();
+    if (!old.results.length) break;
+    for (const row of old.results) {
+      if (row.upload_id) {
+        try { await bucket().resumeMultipartUpload(row.file_key, row.upload_id).abort(); }
+        catch { console.error("An expired multipart upload could not be aborted; storage expiry will clear unfinished parts."); }
+      }
+      await bucket().delete(row.file_key);
+      await db.prepare("DELETE FROM installs WHERE id=?").bind(row.id).run();
+      removed++;
     }
-    await bucket().delete(row.file_key);
-    await db.prepare("DELETE FROM installs WHERE id=?").bind(row.id).run();
+    if (old.results.length < 30) break;
   }
+  return removed;
 }
