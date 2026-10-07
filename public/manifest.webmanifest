@@ -1,0 +1,11 @@
+{
+  "name":"AmaazSign — IPA Signer",
+  "short_name":"AmaazSign",
+  "description":"Sign compatible IPA files in your browser and prepare iPhone installation links.",
+  "start_url":"/",
+  "scope":"/",
+  "display":"standalone",
+  "background_color":"#0f1017",
+  "theme_color":"#9d86ff",
+  "icons":[{"src":"/amaazsign-logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]
+}
