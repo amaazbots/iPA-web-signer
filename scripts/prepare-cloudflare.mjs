@@ -6,6 +6,9 @@ if(!/^[0-9a-f-]{20,}$/i.test(databaseId))throw new Error("AMAAZSIGN_D1_ID does n
 
 const source=JSON.parse(fs.readFileSync("dist/server/wrangler.json","utf8"));
 source.name="amaazsign";
+delete source.legacy_env;
+source.main="dist/server/index.js";
+if(source.assets?.directory)source.assets.directory="dist/client";
 source.d1_databases=[{binding:"DB",database_name:"amaazsign-db",database_id:databaseId}];
 source.r2_buckets=[{binding:"BUCKET",bucket_name:"amaazsign-files"}];
 source.vars={...(source.vars||{}),SITE_PUBLIC:"true"};

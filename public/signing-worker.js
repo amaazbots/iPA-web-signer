@@ -1,6 +1,35 @@
 /* global createZsignModule, importScripts */
 
-const runtimeVersion = 'wasm_28a6421_dylib_fix_v2'
+const runtimeVersion = 'wasm_chunked_cloudflare_v3'
+const wasmParts = [
+  'zsign-mobile.wasm.part-00',
+  'zsign-mobile.wasm.part-01',
+  'zsign-mobile.wasm.part-02',
+  'zsign-mobile.wasm.part-03',
+  'zsign-mobile.wasm.part-04',
+  'zsign-mobile.wasm.part-05',
+  'zsign-mobile.wasm.part-06',
+  'zsign-mobile.wasm.part-07',
+  'zsign-mobile.wasm.part-08',
+]
+const expectedWasmBytes = 2168107
+
+async function loadWasmBinary() {
+  const responses = await Promise.all(wasmParts.map((part) => fetch(`/wasm/${part}`)))
+  const failed = responses.find((response) => !response.ok)
+  if (failed) throw new Error(`Signing engine download failed (${failed.status}).`)
+  const chunks = await Promise.all(responses.map(async (response) => new Uint8Array(await response.arrayBuffer())))
+  const size = chunks.reduce((total, chunk) => total + chunk.byteLength, 0)
+  if (size !== expectedWasmBytes) throw new Error(`Signing engine download was incomplete (${size}/${expectedWasmBytes} bytes).`)
+  const binary = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) {
+    binary.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  if (!WebAssembly.validate(binary)) throw new Error('The downloaded signing engine is damaged. Refresh the page and try again.')
+  return binary
+}
 
 function normalizePath(path) {
   const normalized = path.replaceAll('\\', '/')
@@ -51,8 +80,10 @@ self.onmessage = async (event) => {
 
   try {
     importScripts(`/wasm/zsign-mobile.js?v=${runtimeVersion}`)
+    const wasmBinary = await loadWasmBinary()
     const module = await createZsignModule({
       noInitialRun: true,
+      wasmBinary,
       locateFile(file) {
         return `/wasm/${file}?v=${runtimeVersion}`
       },
