@@ -1,0 +1,1 @@
+ALTER TABLE `installs` ADD `upload_id` text;

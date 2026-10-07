@@ -1,0 +1,3 @@
+export function SiteHeader({ active = "signer" }: { active?: string }) {
+  return <header className="site-header"><a className="brand" href="/" aria-label="AmaazSign home"><span className="brand-mark"><img src="/amaazsign-logo.png" alt="" width={43} height={43}/></span><span>Amaaz<span className="brand-light">Sign</span><small>BY AMAAZBOTS</small></span></a><nav aria-label="Main navigation"><a className={active === "signer" ? "nav-active" : ""} href="/">IPA signer</a><a className={active === "manage" ? "nav-active" : ""} href="/admin">Manage</a></nav><span className="header-label">YOUR FILE. YOUR DEVICE.</span></header>;
+}
